@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  env: "development"
+
+database:
+  url: "postgres://postgres:sifre@localhost:5432/studentdb?sslmode=disable"
+  max_open_conns: 25 
+  max_idle_conns: 5
+
+log:
+  level: "debug" 
+  format: "text" 
