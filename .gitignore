@@ -41,3 +41,5 @@ docker-compose.override.yml
 # Test coverage
 coverage.out
 coverage.html
+
+confg.yaml

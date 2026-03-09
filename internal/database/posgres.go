@@ -2,25 +2,26 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
+	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // Sürücüyü kaydet
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func ConnectDB() (*sql.DB, error) {
-	dsn := "postgres://admin:secret@localhost:5432/studentdb?sslmode=disable"
-
+// Artık hardcoded string yok, dsn dışarıdan geliyor
+func ConnectDB(dsn string, maxOpen int, maxIdle int) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	// Bağlantıyı test et
-	err = db.Ping()
-	if err != nil {
+	// Bağlantı havuzu ayarlarını da config'den gelen değerlerle yapalım
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
+	db.SetConnMaxLifetime(time.Hour)
+
+	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 
-	fmt.Println("PostgreSQL bağlantısı başarılı!")
 	return db, nil
 }
