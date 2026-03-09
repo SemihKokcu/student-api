@@ -1,36 +1,38 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"student-api/internal/container"
+	"student-api/internal/middleware"
+
+	"github.com/go-chi/chi/v5"
+	chi_middleware "github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
 	app, err := container.New()
 	if err != nil {
-		log.Fatalf("Uygulama başlatılamadı: %v", err)
+		panic(err)
 	}
-	defer app.DB.Close()
+
+	r := chi.NewRouter()
+
+	// 1. Global Middleware'ler
+	r.Use(middleware.StructuredLogger(app.Logger))
+	r.Use(chi_middleware.Recoverer)
+
+	// 2. Rotalar (Route Grouping)
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Route("/students", func(r chi.Router) {
+			r.Post("/", app.StudentHandler.CreateStudent)
+			r.Get("/", app.StudentHandler.GetStudent)
+			r.Get("/{id}", app.StudentHandler.GetStudent)
+			r.Delete("/{id}", app.StudentHandler.DeleteStudent)
+		})
+	})
 
 	addr := ":" + strconv.Itoa(app.Config.Server.Port)
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Sistem ayakta!")
-	})
-	mux.HandleFunc("POST /students", app.StudentHandler.CreateStudent)
-	mux.HandleFunc("GET /students", app.StudentHandler.ListStudents)
-	mux.HandleFunc("GET /student", app.StudentHandler.GetStudent)
-	mux.HandleFunc("DELETE /student", app.StudentHandler.DeleteStudent)
-
-	fmt.Printf("Sunucu %s ortamında, %s portunda çalışıyor...\n", app.Config.Server.Env, addr)
-
-	// 3. Server'ı başlat
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatalf("Sunucu hatası: %v", err)
-	}
+	app.Logger.Info("Server started", "addr", addr)
+	http.ListenAndServe(addr, r)
 }
