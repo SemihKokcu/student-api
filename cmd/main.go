@@ -2,12 +2,12 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	"student-api/internal/container"
 	"student-api/internal/middleware"
 
-	"github.com/go-chi/chi/v5"
-	chi_middleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -16,23 +16,36 @@ func main() {
 		panic(err)
 	}
 
-	r := chi.NewRouter()
+	if app.Config.Server.Env == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	// 1. Global Middleware'ler
-	r.Use(middleware.StructuredLogger(app.Logger))
-	r.Use(chi_middleware.Recoverer)
+	r := gin.New()
 
-	// 2. Rotalar (Route Grouping)
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/students", func(r chi.Router) {
-			r.Post("/", app.StudentHandler.CreateStudent)
-			r.Get("/", app.StudentHandler.ListStudents)
-			r.Get("/{id}", app.StudentHandler.GetStudent)
-			r.Delete("/{id}", app.StudentHandler.DeleteStudent)
-		})
-	})
+	r.Use(middleware.GinStructuredLogger(app.Logger))
+	r.Use(gin.Recovery())
+
+	v1 := r.Group("/api/v1")
+	{
+		students := v1.Group("/students")
+		{
+			students.POST("/", app.StudentHandler.CreateStudent)
+			students.GET("/", app.StudentHandler.ListStudents)
+			students.GET("/:id", app.StudentHandler.GetStudent) // {id} -> :id
+			students.DELETE("/:id", app.StudentHandler.DeleteStudent)
+		}
+	}
 
 	addr := ":" + strconv.Itoa(app.Config.Server.Port)
-	app.Logger.Info("Server started", "addr", addr)
-	http.ListenAndServe(addr, r)
+	app.Logger.Info("Server started with Gin", "addr", addr)
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		app.Logger.Error("Server forced to shutdown", "error", err)
+		os.Exit(1)
+	}
 }

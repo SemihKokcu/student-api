@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"student-api/internal/models"
 	"student-api/internal/repository"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 )
 
 type StudentHandler struct {
@@ -19,56 +18,53 @@ func NewStudentHandler(repo *repository.StudentRepository) *StudentHandler {
 	return &StudentHandler{repo: repo}
 }
 
-func (h *StudentHandler) CreateStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *StudentHandler) CreateStudent(c *gin.Context) {
 	var s models.Student
-	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+
+	if err := c.ShouldBindJSON(&s); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz veri formatı"})
 		return
 	}
+
 	if err := h.repo.Create(s); err != nil {
-		http.Error(w, "Öğrenci oluşturulamadı", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Kaydedilemedi"})
 		return
 	}
-	json.NewEncoder(w).Encode(s)
+
+	c.JSON(http.StatusCreated, s)
 }
 
-func (h *StudentHandler) ListStudents(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *StudentHandler) ListStudents(c *gin.Context) {
 	students, err := h.repo.GetAll()
 	if err != nil {
-		http.Error(w, "Öğrenci yüklenemedi", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Öğrenci yüklenemedi"})
 		return
 	}
-	json.NewEncoder(w).Encode(students)
+	c.JSON(http.StatusOK, students)
 }
 
-func (h *StudentHandler) GetStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	idStr := chi.URLParam(r, "id")
+func (h *StudentHandler) GetStudent(c *gin.Context) {
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
+
+	student, err := h.repo.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Öğrenci bulunamadı"})
+		return
+	}
+
+	c.JSON(http.StatusOK, student)
+}
+func (h *StudentHandler) DeleteStudent(c *gin.Context) {
+	idStr := c.Query("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Geçersiz ID", http.StatusBadRequest)
-		return
-	}
-	students, err := h.repo.GetByID(id)
-	if err != nil {
-		http.Error(w, "Öğrenci yüklenemedi", http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(students)
-}
-
-func (h *StudentHandler) DeleteStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		http.Error(w, "Geçersiz ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"})
 		return
 	}
 	if err := h.repo.Delete(id); err != nil {
-		http.Error(w, "Öğrenci silinemedi", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Öğrenci silinemedi"})
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
