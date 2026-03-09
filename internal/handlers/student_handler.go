@@ -7,6 +7,8 @@ import (
 
 	"student-api/internal/models"
 	"student-api/internal/repository"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type StudentHandler struct {
@@ -43,7 +45,8 @@ func (h *StudentHandler) ListStudents(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudentHandler) GetStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Geçersiz ID", http.StatusBadRequest)
 		return

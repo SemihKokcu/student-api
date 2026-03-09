@@ -26,7 +26,7 @@ func main() {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/students", func(r chi.Router) {
 			r.Post("/", app.StudentHandler.CreateStudent)
-			r.Get("/", app.StudentHandler.GetStudent)
+			r.Get("/", app.StudentHandler.ListStudents)
 			r.Get("/{id}", app.StudentHandler.GetStudent)
 			r.Delete("/{id}", app.StudentHandler.DeleteStudent)
 		})
