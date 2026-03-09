@@ -40,6 +40,12 @@ func New() (*Container, error) {
 	}
 	l.Info("Veritabanına başarıyla bağlanıldı")
 
+	// check migrations
+	if err := database.RunMigrations(cfg.Database.URL, cfg.Database.MigrationsPath); err != nil {
+		l.Error("Migration hatası", "hata", err)
+		return nil, err
+	}
+
 	// create injections
 	studentRepo := repository.NewStudentRepository(db)
 	studentHandler := handlers.NewStudentHandler(studentRepo)

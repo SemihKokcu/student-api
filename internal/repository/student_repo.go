@@ -13,9 +13,9 @@ func NewStudentRepository(db *sql.DB) *StudentRepository {
 	return &StudentRepository{db: db}
 }
 
-func (r *StudentRepository) Create(s models.Student) error {
-	query := `INSERT INTO students (name, grade) VALUES ($1, $2) RETURNING id`
-	return r.db.QueryRow(query, s.Name, s.Grade).Scan(&s.ID)
+func (r *StudentRepository) Create(s *models.Student) error {
+	query := `INSERT INTO students (name, grade, email) VALUES ($1, $2, $3) RETURNING id, created_at`
+	return r.db.QueryRow(query, s.Name, s.Grade, s.Email).Scan(&s.ID, &s.CreatedAt)
 }
 
 func (r *StudentRepository) GetAll() ([]models.Student, error) {

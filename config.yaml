@@ -4,6 +4,7 @@ server:
 
 database:
   url: "postgres://admin:secret@localhost:5432/studentdb?sslmode=disable"
+  migrations_path: "file://migrations"
   max_open_conns: 25 
   max_idle_conns: 5
 

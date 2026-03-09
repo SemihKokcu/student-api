@@ -27,7 +27,7 @@ func (h *StudentHandler) CreateStudent(c *gin.Context) {
 		return
 	}
 
-	if err := h.repo.Create(s); err != nil {
+	if err := h.repo.Create(&s); err != nil {
 		response.InternalError(c, "Öğrenci kaydedilemedi.")
 		return
 	}

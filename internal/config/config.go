@@ -17,9 +17,10 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL          string `mapstructure:"url"`
-	MaxOpenConns int    `mapstructure:"max_open_conns"`
-	MaxIdleConns int    `mapstructure:"max_idle_conns"`
+	URL            string `mapstructure:"url"`
+	MaxOpenConns   int    `mapstructure:"max_open_conns"`
+	MaxIdleConns   int    `mapstructure:"max_idle_conns"`
+	MigrationsPath string `mapstructure:"migrations_path"`
 }
 
 type LogConfig struct {
